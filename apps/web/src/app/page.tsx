@@ -1,8 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { text } from 'stream/consumers';
-
 
 const messages = [
   {
@@ -31,134 +29,133 @@ const messages = [
   },
 ];
 
-const page = () => {
-  const [inputName, setInputName] = useState<string>("")
-  const [userName, setUserName] = useState<string>("Guest")
+const Page = () => {
+  const [inputName, setInputName] = useState("")
+  const [userName, setUserName] = useState("Guest")
+  const [text, setText] = useState("")
+  const [showNamePopup, setShowNamePopup] = useState(true)
 
-  const [text, setText] = useState<string>("")
-  const showNamePopup: boolean = false
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
-  const handleNameSubmit = () => {
-    console.log("Name submitted")
+
+  const handleNameSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!inputName.trim()) return
+    setUserName(inputName)
+    setShowNamePopup(false)
   }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      console.log("Message sent:", text);
-      setText("");
+      sendMessage()
     }
   };
-  const sendMessage=()=>{
+
+  const sendMessage = () => {
+    if (!text.trim()) return
     console.log("Message sent:", text);
+    setText("")
   }
+
   return (
     <main>
-      <div className='min-h-screen  flex items-center justify-center  bg-zinc-100 p-4 font-inter'>
-        {
-          showNamePopup && (
-            <div className="fixed inset-0 flex items-center justify-center z-40">
-              <div className="bg-white rounded-xl shadow-lg max-w-md p-6">
-                <h1 className="text-xl font-semibold text-black">
-                  Enter your name
-                </h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  Enter your name to start chatting . This will be used to identify
-                </p>
-                <form onSubmit={handleNameSubmit} className='mt-4'>
-                  <input type="text" placeholder="Your name (e.g. John Carter)" className="w-full border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-green-500"
-                    autoFocus
-                    value={inputName}
-                    onChange={(e) => setInputName(e.target.value)}
-
-                  />
-                  <button
-                    type='submit'
-                    className='block ml-auto mt-3 px-4 py-1.5 rounded-full bg-green-500 text-white font-medium hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2'>
-                    Continue
-                  </button>
-                </form>
-
-              </div>
-            </div>
-          )
-        }
-        {
-          !showNamePopup && (
-            <div className='w-full max-w-2xl h-[90vh] bg-white rounded-xl shadow-md flex flex-col overflow-hidden '>
-              {/* chat header */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
-                <div className="h-10 w-10 rounded-full bg-[#e0d9d9] flex items-center justify-center text-2xl">
-                  R
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-[#303030]">
-                    Realtime group chat
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Someone is typing...
-                  </div>
-                </div>
-                <div className="text-sm text-gray-500 ">
-                  Signed in as{' '}
-                  <span className="font-medium text-gray-900 capitalize">{userName}</span>
-                </div>
-              </div>
-              {/* CHAT MESSAGE LIST */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-zinc-100 flex flex-col">
-                {messages.map((m) => {
-                  const mine = m.sender === userName;
-
-                  return (
-                    <div
-                      key={m.id}
-                      className={`flex ${mine ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[78%] p-3 my-2 rounded-[18px] text-sm leading-5 shadow-sm ${mine
-                          ? "bg-[#DCF8C6] text-[#303030] rounded-br-2xl"
-                          : "bg-white text-[#303030] rounded-bl-2xl"
-                          }`}
-                      >
-                        <div className="break-words whitespace-pre-wrap">
-                          {m.text}
-                        </div>
-
-                        <div className="flex justify-between items-center mt-1 gap-16">
-                          <div className="text-[11px] font-bold">{m.sender}</div>
-                          <div className="text-[11px] text-gray-500 text-right">
-                            {formatTime(m.ts)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {/* chat text area */}
-              <div className="px-4 py-3 border-t border-gray-200 rounded-full">
-                <textarea rows={1}
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder='Type a message...'
-                  className='w-full resize-none px-4 py-4 text-sm outline-none'
+      <div className='min-h-screen flex items-center justify-center bg-[#e5ddd5] p-4'>
+        
+        {/* NAME POPUP */}
+        {showNamePopup && (
+          <div className="fixed inset-0 flex items-center justify-center z-40 bg-black/30">
+            <div className="bg-white rounded-xl shadow-lg max-w-md p-6">
+              <h1 className="text-xl font-semibold text-black">Enter your name</h1>
+              <form onSubmit={handleNameSubmit} className='mt-4'>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  className="w-full border rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  autoFocus
+                  value={inputName}
+                  onChange={(e) => setInputName(e.target.value)}
                 />
                 <button
-                  onClick={sendMessage}
-                  className='block ml-auto mt-3 px-4 py-1.5 rounded-full bg-green-500 text-white font-medium hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2'>
-                  Send Message
+                  type='submit'
+                  className='block ml-auto mt-3 px-4 py-1.5 rounded-full bg-green-500 text-white hover:bg-green-600'>
+                  Continue
                 </button>
+              </form>
+            </div>
+          </div>
+        )}
 
+        {/* CHAT UI */}
+        {!showNamePopup && (
+          <div className='w-full max-w-2xl h-[90vh] bg-white rounded-xl shadow-md flex flex-col overflow-hidden'>
+            
+            {/* HEADER */}
+            <div className="flex items-center gap-3 px-4 py-3 bg-[#075E54] text-white">
+              <div className="h-10 w-10 rounded-full bg-white text-[#075E54] flex items-center justify-center font-bold">
+                {userName[0]}
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-medium">Realtime Chat</div>
+                <div className="text-xs opacity-80">online</div>
+              </div>
+              <div className="text-xs">
+                {userName}
               </div>
             </div>
-          )
-        }
+
+            {/* MESSAGES */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#e5ddd5] flex flex-col">
+              {messages.map((m) => {
+                const mine = m.sender === userName;
+
+                return (
+                  <div
+                    key={m.id}
+                    className={`flex ${mine ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[75%] p-3 rounded-lg text-sm shadow ${
+                        mine
+                          ? "bg-[#dcf8c6] rounded-br-none"
+                          : "bg-white rounded-bl-none"
+                      }`}
+                    >
+                      <div className="whitespace-pre-wrap">{m.text}</div>
+
+                      <div className="text-[10px] text-gray-500 text-right mt-1">
+                        {formatTime(m.ts)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* INPUT */}
+            <div className="px-3 py-2 bg-[#f0f0f0] flex items-center gap-2">
+              <textarea
+                rows={1}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder='Type a message'
+                className='flex-1 resize-none px-4 py-2 rounded-full outline-none text-sm'
+              />
+              <button
+                onClick={sendMessage}
+                className='bg-[#075E54] text-white px-4 py-2 rounded-full'>
+                Send
+              </button>
+            </div>
+
+          </div>
+        )}
       </div>
     </main>
   )
 }
 
-export default page
+export default Page
