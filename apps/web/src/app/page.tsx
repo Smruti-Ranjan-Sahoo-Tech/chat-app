@@ -1,39 +1,54 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { use, useEffect, useRef, useState } from 'react'
+import { connectWS } from '../config/ws';
+import { Socket } from 'socket.io-client';
 
-const messages = [
-  {
-    id: "1",
-    sender: "Elysia",
-    text: "Hello! How are you?",
-    ts: 1715935800000,
-  },
-  {
-    id: "2",
-    sender: "You",
-    text: "I'm good, thanks! How about you?",
-    ts: 1715935860000,
-  },
-  {
-    id: "3",
-    sender: "Elysia",
-    text: "I'm doing great! Are we still on for the meeting tomorrow?",
-    ts: 1715935920000,
-  },
-  {
-    id: "4",
-    sender: "You",
-    text: "Yes, definitely. See you tomorrow!",
-    ts: 1715935980000,
-  },
-];
+// const messages = [
+//   {
+//     id: "1",
+//     sender: "Elysia",
+//     text: "Hello! How are you?",
+//     ts: 1715935800000,
+//   },
+//   {
+//     id: "2",
+//     sender: "You",
+//     text: "I'm good, thanks! How about you?",
+//     ts: 1715935860000,
+//   },
+//   {
+//     id: "3",
+//     sender: "Elysia",
+//     text: "I'm doing great! Are we still on for the meeting tomorrow?",
+//     ts: 1715935920000,
+//   },
+//   {
+//     id: "4",
+//     sender: "You",
+//     text: "Yes, definitely. See you tomorrow!",
+//     ts: 1715935980000,
+//   },
+// ];
 
 const Page = () => {
+  const socket = useRef<Socket | null>(null);
   const [inputName, setInputName] = useState("")
-  const [userName, setUserName] = useState("Guest")
+  const [userName, setUserName] = useState("")
   const [text, setText] = useState("")
-  const [showNamePopup, setShowNamePopup] = useState(true)
+  const [messages, setmessages] = useState([])
+
+  const [showNamePopup, setShowNamePopup] = useState<boolean>(true)
+
+
+
+  useEffect(() => {
+    socket.current = connectWS();
+    socket.current.on("connect", () => {
+
+
+    })
+  }, [])
 
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -43,10 +58,15 @@ const Page = () => {
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputName.trim()) return
+
     setUserName(inputName)
+
+    console.log("huv:", inputName)
+
+    socket.current?.emit("joinRoom", inputName)
+
     setShowNamePopup(false)
   }
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -63,7 +83,7 @@ const Page = () => {
   return (
     <main>
       <div className='min-h-screen flex items-center justify-center bg-[#e5ddd5] p-4'>
-        
+
         {/* NAME POPUP */}
         {showNamePopup && (
           <div className="fixed inset-0 flex items-center justify-center z-40 bg-black/30">
@@ -91,7 +111,7 @@ const Page = () => {
         {/* CHAT UI */}
         {!showNamePopup && (
           <div className='w-full max-w-2xl h-[90vh] bg-white rounded-xl shadow-md flex flex-col overflow-hidden'>
-            
+
             {/* HEADER */}
             <div className="flex items-center gap-3 px-4 py-3 bg-[#075E54] text-white">
               <div className="h-10 w-10 rounded-full bg-white text-[#075E54] flex items-center justify-center font-bold">
@@ -117,11 +137,10 @@ const Page = () => {
                     className={`flex ${mine ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[75%] p-3 rounded-lg text-sm shadow ${
-                        mine
-                          ? "bg-[#dcf8c6] rounded-br-none"
-                          : "bg-white rounded-bl-none"
-                      }`}
+                      className={`max-w-[75%] p-3 rounded-lg text-sm shadow ${mine
+                        ? "bg-[#dcf8c6] rounded-br-none"
+                        : "bg-white rounded-bl-none"
+                        }`}
                     >
                       <div className="whitespace-pre-wrap">{m.text}</div>
 
