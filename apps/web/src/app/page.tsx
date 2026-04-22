@@ -30,29 +30,75 @@ import { Socket } from 'socket.io-client';
 //     ts: 1715935980000,
 //   },
 // ];
-
+interface MSG {
+  id: string;
+  sender: string;
+  text: string;
+  ts: number;
+}
 const Page = () => {
   const socket = useRef<Socket | null>(null);
   const [inputName, setInputName] = useState("")
   const [userName, setUserName] = useState("")
   const [text, setText] = useState("")
-  const [messages, setmessages] = useState([])
+  const [typers, setTypers] = useState([])
+  const [messages, setmessages] = useState<{ id: string; sender: string; text: string; ts: number }[]>([])
 
   const [showNamePopup, setShowNamePopup] = useState<boolean>(true)
 
 
-
   useEffect(() => {
     socket.current = connectWS();
+    const socketInstance = socket.current;
 
-    socket.current.on("connect", () => {
-      socket.current?.on("roomNoticed",(userName)=>{
-        console.log(`${userName} joined the droup ! `)
+    socketInstance?.on("connect", () => {
+      console.log("Connected:", socketInstance.id);
+    });
+
+    socketInstance?.on("roomNoticed", (userName) => {
+      console.log(`${userName} joined the group!`);
+    });
+
+    socketInstance?.on("chatMessage", (msg) => {
+      console.log("msg", msg);
+      setmessages((prev: { id: string; sender: string; text: string; ts: number }[]) => [...prev, msg]);
+    });
+    socketInstance?.on('typing', (userName) => {
+      setTypers((prev) => {
+        const isExist = prev.find((typers) => typers === userName)
+        if (!isExist) {
+          return [...prev, userName]
+        }
+        return prev
       })
-
     })
-  }, [])
+    socketInstance?.on('stopTyping', (userName) => {
+      setTypers((prev) => {
+        return prev.filter((typers) => typers !== userName)
+      })
+    })
 
+
+    return () => {
+      socketInstance?.off("connect");
+      socketInstance?.off("roomNoticed");
+      socketInstance?.off("chatMessage");
+      socketInstance?.off("typing");
+
+    };
+  }, []);
+  useEffect(() => {
+    if (text) {
+      socket.current?.emit("typing", userName)
+      setTimeout(() => {
+        socket.current?.emit("stopTyping", userName)
+      }, 1000);
+
+    }
+
+  }, [text, userName])
+
+  use
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -64,7 +110,6 @@ const Page = () => {
 
     setUserName(inputName)
 
-    console.log("huv:", inputName)
 
     socket.current?.emit("joinRoom", inputName)
 
@@ -78,9 +123,20 @@ const Page = () => {
   };
 
   const sendMessage = () => {
-    if (!text.trim()) return
+    const t = text.trim()
+    if (!t) return;
+
+    const msg: MSG = {
+      id: Date.now().toString(),
+      sender: userName,
+      text: t,
+      ts: Date.now()
+    };
+    setmessages((prev: MSG[]) => [...prev, msg]);
+    socket.current?.emit("chatMessage", msg);
+
     console.log("Message sent:", text);
-    setText("")
+    setText("");
   }
 
   return (
@@ -121,8 +177,12 @@ const Page = () => {
                 {userName[0]}
               </div>
               <div className="flex-1">
-                <div className="text-sm font-medium">Realtime Chat</div>
-                <div className="text-xs opacity-80">online</div>
+                <div className="text-sm font-medium">Realtime Group Chat</div>
+                <div className="text-xs opacity-80">
+                  {
+                    typers.length ? `${typers.join(", ")} typing...` : "online"
+                  }
+                </div>
               </div>
               <div className="text-xs">
                 {userName}
@@ -145,10 +205,16 @@ const Page = () => {
                         : "bg-white rounded-bl-none"
                         }`}
                     >
+                      {!mine && (
+                        <div className="text-xs font-semibold text-[#075E54] mb-1">
+                          {m.sender}
+                        </div>
+                      )}
+
                       <div className="whitespace-pre-wrap">{m.text}</div>
 
                       <div className="text-[10px] text-gray-500 text-right mt-1">
-                        {formatTime(m.ts)}
+                        {formatTime(m.ts)} {mine && "✓"}
                       </div>
                     </div>
                   </div>
