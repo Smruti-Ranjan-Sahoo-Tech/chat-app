@@ -44,8 +44,11 @@ const Page = () => {
 
   useEffect(() => {
     socket.current = connectWS();
-    socket.current.on("connect", () => {
 
+    socket.current.on("connect", () => {
+      socket.current?.on("roomNoticed",(userName)=>{
+        console.log(`${userName} joined the droup ! `)
+      })
 
     })
   }, [])
